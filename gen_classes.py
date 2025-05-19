@@ -4,10 +4,26 @@ import argparse
 import os
 
 
+def load_config(filename):
+    try:
+        with open(filename, 'r') as f:
+            return [line.strip() for line in f if line.strip()]
+    except FileNotFoundError:
+        print(f"Warning: Config file {filename} not found, using defaults")
+        return None
+
+
 def generate_class_name():
-    prefixes = ['Data', 'User', 'Manager', 'Processor', 'Handler',
-                'Service', 'Helper', 'Validator', 'Checker', 'Generator']
-    suffixes = ['', 'Impl', 'Util', 'Controller', 'Factory', 'Adapter']
+    config_prefixes = load_config('prefixes.txt')
+    prefixes = config_prefixes if config_prefixes else [
+        'Data', 'User', 'Manager', 'Processor', 'Handler',
+        'Service', 'Helper', 'Validator', 'Checker', 'Generator'
+    ]
+
+    config_suffixes = load_config('suffixes.txt')
+    suffixes = config_suffixes if config_suffixes else [
+        '', 'Impl', 'Util', 'Controller', 'Factory', 'Adapter'
+    ]
     name = random.choice(prefixes)
     if random.random() < 0.5:
         name += random.choice(suffixes)
@@ -18,10 +34,9 @@ def generate_class_name():
 
 def generate_field():
     types = [
-        ('int', 'i_', lambda: random.randint(1, 100)),  # 保证正数
+        ('int', 'i_', lambda: random.randint(1, 100)),
         ('float', 'f_', lambda: round(random.uniform(0.1, 100.0), 2)),
-        ('bool', 'b_', lambda: random.choice(['true', 'false'])),
-        ('std::string', 's_', lambda: f'"{random_string(5)}"')
+        ('bool', 'b_', lambda: random.choice(['true', 'false']))
     ]
     t_type, t_prefix, t_gen = random.choice(types)
     return (t_type, f"{t_prefix}{random_string(5)}", t_gen)
@@ -44,15 +59,16 @@ def generate_constructor(class_name, fields):
 
 
 def generate_normal_method(fields):
-    method_name = f"{random.choice(['calculate', 'update', 'process', 'handle'])}" \
-        f"{random_string(4).capitalize()}"
+    config_methods = load_config('normal_methods.txt')
+    method_verbs = config_methods if config_methods else [
+        'calculate', 'update', 'process', 'handle'
+    ]
+    method_name = f"{random.choice(method_verbs)}{random_string(4).capitalize()}"
     operations = []
 
     if fields:
         for _ in range(random.randint(1, 3)):
             field = random.choice(fields)
-            if field[0] == 'std::string':
-                continue  # 跳过字符串操作
             op = random.choice([
                 f"{field[1]} += {random.randint(1, 10)};",
                 f"{field[1]} = {field[2]()};",
@@ -71,7 +87,11 @@ def generate_normal_method(fields):
 
 
 def generate_smart_bool_method(fields, existing_methods):
-    method_name = f"{random.choice(['check', 'verify', 'validate'])}{random_string(3).capitalize()}"
+    config_methods = load_config('bool_methods.txt')
+    bool_verbs = config_methods if config_methods else [
+        'check', 'verify', 'validate'
+    ]
+    method_name = f"{random.choice(bool_verbs)}{random_string(3).capitalize()}"
     is_public = random.choice([True, False])
     access = "public" if is_public else "private"
     code = [f"{access}:"]
@@ -161,7 +181,7 @@ def main():
         with open(header_file, 'w', encoding='utf-8') as f:
             f.write(f"#ifndef {class_name.upper()}_H\n")
             f.write(f"#define {class_name.upper()}_H\n\n")
-            f.write("#include <string>\n\n")
+            f.write("#include <cstdint>\n\n")
             f.write(class_code)
             f.write(f"\n#endif // {class_name.upper()}_H\n")
 

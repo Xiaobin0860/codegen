@@ -14,8 +14,8 @@ nop_variants = [
 ]
 
 
-def generate_junk_insn(avoid_regs: list = None) -> str:
-    """生成单条垃圾指令序列"""
+def gen_junk_insn(avoid_regs: list = None) -> str:
+    """生成垃圾指令序列"""
     # 排除最近使用的寄存器（可选）
     available_regs = registers.copy()
     if avoid_regs:
@@ -33,7 +33,7 @@ def generate_junk_insn(avoid_regs: list = None) -> str:
     else:
         code.append(f"stp {selected[0]}, {selected[1]}, [sp, #{stack_offset}]!")
 
-    # 垃圾指令核心
+    # 垃圾指令
     for _ in range(random.randint(3, 5)):
         reg = random.choice(selected)
         op = random.choice(operations)
@@ -73,7 +73,7 @@ def generate_junk_insn(avoid_regs: list = None) -> str:
     else:
         code.append(f"ldp {selected[0]}, {selected[1]}, [sp], #{-stack_offset}")
 
-    # 添加随机nop
+    # 随机nop
     code.append(random.choice(nop_variants))
 
     return code, selected
@@ -85,7 +85,7 @@ def generate_obfuscation_code(num_blocks: int) -> List[str]:
     last_regs = []
 
     for _ in range(num_blocks):
-        code_block, used_regs = generate_junk_insn(avoid_regs=last_regs[-2:] if last_regs else None)
+        code_block, used_regs = gen_junk_insn(avoid_regs=last_regs[-2:] if last_regs else None)
         last_regs = used_regs
         asm_code = ';'.join(code_block)
         generated.append(f'__asm__ __volatile__("{asm_code}" ::: "memory")')
@@ -107,8 +107,8 @@ if __name__ == "__main__":
     generated = generate_obfuscation_code(num_blocks)
 
     with open('arm64_blocks.h', 'w', encoding='utf-8') as h_file:
-        h_file.write("#ifndef FLOWER_BLOCKS_H\n")
-        h_file.write("#define FLOWER_BLOCKS_H\n\n")
+        h_file.write("#ifndef OBFUSCATION_BLOCKS_H\n")
+        h_file.write("#define OBFUSCATION_BLOCKS_H\n\n")
         for idx, code in enumerate(generated, 1):
-            h_file.write(f"#define FLOWER_BLOCK_{idx:03d}() {code}\n\n")
-        h_file.write('\n#endif // FLOWER_BLOCKS_H\n')
+            h_file.write(f"#define obfuscation_block_{idx:03d}() {code}\n\n")
+        h_file.write('\n#endif // OBFUSCATION_BLOCKS_H\n')

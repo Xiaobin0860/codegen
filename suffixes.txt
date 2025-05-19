@@ -1,0 +1,15 @@
+
+Impl
+Util
+Controller
+Factory
+Adapter
+View
+Model
+Mgr
+Protocal
+Const
+Exception
+Interface
+Svc
+Instance
